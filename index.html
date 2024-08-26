@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+   <head>
+      <title>Recordly</title>
+      <meta charset="utf-8" />
+      <meta name="author" content="SidPro"/>
+      <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+      <meta name="description" content="Easily capture your browser window, tab, or entire screen with just a few clicks. With Recordly, 
+      your recordings stay secure within your browser—no uploads, ensuring total privacy"/>
+      <meta name="keywords" content="Recordly, screen, recorder, capture, screen capture, screen recorder"/>
+      <!-- icons -->
+      <link rel="apple-touch-icon" sizes="57x57" href="icons/favicon-57x57.png" />
+      <link rel="apple-touch-icon" sizes="60x60" href="icons/favicon-60x60.png" />
+      <link rel="apple-touch-icon" sizes="72x72" href="icons/favicon-72x72.png" />
+      <link rel="apple-touch-icon" sizes="76x76" href="icons/favicon-76x76.png" />
+      <link rel="apple-touch-icon" sizes="114x114" href="icons/favicon-114x114.png" />
+      <link rel="apple-touch-icon" sizes="120x120" href="icons/favicon-120x120.png" />
+      <link rel="apple-touch-icon" sizes="152x152" href="icons/favicon-152x152.png" />
+      <link rel="apple-touch-icon" sizes="180x180" href="icons/favicon-180x180.png" />
+      <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16x16.png" />
+      <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32x32.png" />
+      <link rel="icon" type="image/png" sizes="96x96" href="icons/favicon-96x96.png" />
+      <link rel="icon" type="image/png" sizes="192x192" href="icons/favicon-192x192.png" />
+      <link rel="shortcut icon" type="image/x-icon" href="icons/favicon.ico" />
+      <link rel="icon" type="image/x-icon" href="icons/favicon.ico" />
+      <meta name="msapplication-TileColor" content="#ffffff" />
+      <meta name="msapplication-config" content="icons/browserconfig.xml" />
+      <link rel="manifest" href="icons/manifest.json" />
+      <!-- icons -->
+      <link rel="stylesheet" href="style.css">
+      <!-- EBML.js copyrights goes to: https://github.com/legokichi/ts-ebml --> 
+      <script src="EBML.min.js"></script>
+   </head>
+   <body>
+      <div id="overlay">
+         <div class="loading-spinner" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);"></div>
+      </div>
+      <div class="container">
+         <header>
+            <div class="logo">
+               <img src="images/favicon-512x512.png" alt="Collegeek"> <b>Recordly</b>
+            </div>
+            <!-- <div class="header-icons">
+               <img src="icon1.png" alt="Icon"> 
+               <img src="icon2.png" alt="Icon"> 
+               <img src="icon3.png" alt="Icon"> 
+               <button class="sign-in">Sign in</button>
+            </div> -->
+         </header>
+         <main id="Screen1">
+            <section class="video-settings">
+               <h2>Video Settings</h2>
+               <div class="options">
+                  <div class="option selected">
+                     <img src="images/display-solid.svg" alt="Screen Only">
+                     <span>Screen Only</span>
+                  </div>
+                  <div class="option">
+                     <img src="images/screen-capture-svgrepo-com.svg" alt="Screen + Camera">
+                     <span>Screen + Camera</span>
+                  </div>
+                  <div class="option">
+                     <img src="images/camera-solid.svg" alt="Camera Only">
+                     <span>Camera Only</span>
+                  </div>
+               </div>
+            </section>
+            <section class="recording-settings">
+               <h2>Recording Settings</h2>
+               <div class="settings">
+                  <div class="setting">
+                     <img src="images/video-solid.svg" alt="Video Format">
+                     <select id="video-format" class="video-format" disabled>
+                        <option label="MP4" value="MP4">MP4 Format</option>
+                        <option label="WEBM" value="WEBM" selected>WEBM Format</option>
+                     </select>
+                     <select id="video-quality" class="video-quality" disabled>
+                        <option value="1080p Compressed" selected>1080p Compressed</option>
+                     </select>
+                  </div>
+                  <div class="setting">
+                     <img src="images/microphone-solid.svg" alt="Audio">
+                     <select id="audio" class="audio">
+                        <option value="System" selected>System audio</option>
+                        <option value="Mic System">Mic + System audio</option>
+                        <option value="Mic">Mic audio</option>
+                        <option value="Mute">Mute</option>
+                     </select>
+                  </div>
+               </div>
+            </section>
+            <div class="start-recording">
+               <button id="startRecordButton">Start Recording</button>
+            </div>
+            <br/>
+            <p>Easily capture your browser window, tab, or entire screen with just a few clicks.</p>
+            <p>With Recordly, 
+               your recordings stay secure within your browser—no uploads, ensuring total privacy.</p>
+         </main>
+         <main id="Screen2">
+            <video id="result" autoplay muted playsinline></video>
+            <div class="buttons">
+               <div class="postControl">
+                  <button id="ResumeRecordButton">Pause</button>
+               </div>
+               <div class="postControl">
+               <button id="StopRecordButton">Stop</button>
+               </div>
+            </div>
+         </main>
+         <p style="margin-top: 20px;margin-bottom: 50px;text-align: center;">
+            © Copyright 2020-<script>document.write(new Date().getFullYear())</script> by <a href="https://collegeek.com/" ><b><span style="font-size:20px;">C</span>ollegeek</b></a>. All Rights Reserved.
+        </p>
+      </div>
+      <script src="recorder.js"></script>
+   </body>
+</html>
