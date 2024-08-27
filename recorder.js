@@ -25,9 +25,20 @@ const AUDIO_STETTING = {
   "Mute": {"system": false, "mic": false}
 }
 
+const selectedSet = [
+  {"Mic audio": "Mic", "Mute":"Mute" },
+  {"System audio": "System", "Mic + System audio" : "Mic System" ,"Mic audio": "Mic", "Mute":"Mute"}
+]
+
 const VIDEO_SETTING = {
   "MP4" : "video/mp4",
   "WEBM" : "video/webm"
+}
+
+const CAPTURE = {
+  "Screen Only": {"screen": true, "camera": false},
+  "Screen + Camera": {"screen": true, "camera": true},
+  "Camera Only": {"screen": false, "camera": true}
 }
 
 function showImageProcessing(show) {
@@ -40,18 +51,22 @@ startRecordButton.addEventListener("click", async () => {
   //videoFormatSelection.options[e.selectedIndex].value;
   //videoQualitySelection.options[e.selectedIndex].value;
   audioOption = AUDIO_STETTING[audioSelection.options[audioSelection.selectedIndex].value];
+  captureOption = CAPTURE[getSelectedOption()];
 
   // Prompt the user to share their screen.
   //stream = await navigator.mediaDevices.getDisplayMedia();
-  desktopStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: audioOption.system });
+  if(captureOption.screen || audioOption.system){
+    desktopStream = await navigator.mediaDevices.getDisplayMedia({ video: captureOption.screen, audio: audioOption.system });
+  }
     
-  if (audioOption.mic) {
-    voiceStream = await navigator.mediaDevices.getUserMedia({ video: false, audio: audioOption.mic });
+  if (audioOption.mic || captureOption.camera) {
+    voiceStream = await navigator.mediaDevices.getUserMedia({ video: captureOption.camera, audio: audioOption.mic });
   }
 
+  let track = captureOption.screen ? desktopStream : voiceStream;
 
   const tracks = [
-    ...desktopStream.getVideoTracks(), 
+    ...track.getVideoTracks(), 
     ...mergeAudioStreams(desktopStream, voiceStream)
   ];
   
@@ -163,6 +178,23 @@ document.addEventListener('DOMContentLoaded', () => {
       option.addEventListener('click', () => {
           options.forEach(opt => opt.classList.remove('selected')); // Remove 'selected' class from all options
           option.classList.add('selected'); // Add 'selected' class to clicked option
+        
+          if(getSelectedOption() == "Camera Only")
+          {
+            audioSelection.length = 0;
+            for (let field in selectedSet[0]) {
+              audioSelection.options[audioSelection.options.length] = new Option(field, selectedSet[0][field], 
+                selectedSet[0][field] == "Mic" ? true : false, selectedSet[0][field] == "Mic" ? true : false);
+            }
+          } 
+          else
+          {
+            audioSelection.length = 0;
+            for (let field in selectedSet[1]) {
+              audioSelection.options[audioSelection.options.length] = new Option(field, selectedSet[1][field], 
+                selectedSet[1][field] == "System" ? true : false, selectedSet[1][field] == "System" ? true : false);
+            }
+          }
       });
   });
 });
@@ -196,7 +228,7 @@ StopRecordButton.addEventListener('click', () => {
 // Function to get the selected option's text
 function getSelectedOption() {
   const selectedOption = document.querySelector('.option.selected');
-  return selectedOption ? selectedOption.querySelector('span').textContent : null;
+  return selectedOption ? selectedOption.querySelector('span').textContent.trim() : null;
 }
 
 const mergeAudioStreams = (desktopStream, voiceStream) => {
