@@ -258,7 +258,7 @@ h2 {
     background-color: rgb(5, 72, 197);
 }
 
-video {
+#result {
     display: block;
     margin-top: 10px;
     max-width: 100%;
@@ -266,6 +266,8 @@ video {
     background: black;
     max-height: 480px;
 }
+
+
 
 .setting > #ResumeRecordButton{
     flex: 1;

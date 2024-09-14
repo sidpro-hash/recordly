@@ -9,11 +9,15 @@ const videoQualitySelection = document.querySelector('#video-quality');
 const audioSelection = document.querySelector('#audio');
 const Screen1 = document.querySelector('#Screen1');
 const Screen2 = document.querySelector('#Screen2');
+const result = document.querySelector('#result');
+let canvasElement = document.createElement("canvas");
+let canvasCtx = canvasElement.getContext("2d");
 
 let desktopStream;
 let voiceStream;
 let recorder;
 let audioOption;
+let cam,screen,rafId;
 const mimeType = 'video/webm;codecs=vp9';
 let buffer = [];
 
@@ -57,25 +61,35 @@ startRecordButton.addEventListener("click", async () => {
   //stream = await navigator.mediaDevices.getDisplayMedia();
   if(captureOption.screen || audioOption.system){
     desktopStream = await navigator.mediaDevices.getDisplayMedia({ video: captureOption.screen, audio: audioOption.system });
+    desktopStream.getVideoTracks()[0].onended = () => {
+      StopRecordButton.click();
+    };
   }
     
   if (audioOption.mic || captureOption.camera) {
     voiceStream = await navigator.mediaDevices.getUserMedia({ video: captureOption.camera, audio: audioOption.mic });
   }
 
-  let track = captureOption.screen ? desktopStream : voiceStream;
+  Screen1.style.display = 'none';
+  Screen2.style.display = 'block';
+
+  let track;
+  if(captureOption.camera && captureOption.screen){
+    screen = await attachToDOM("desktopStream", desktopStream, "100%", "100%");
+    cam = await attachToDOM("voiceStream", voiceStream, "100%", "100%");
+    requestAnimationFrame(makeComposite);
+    track = canvasElement.captureStream();
+  }
+  else{
+    track = captureOption.screen ? desktopStream : voiceStream;
+  }
 
   const tracks = [
     ...track.getVideoTracks(), 
     ...mergeAudioStreams(desktopStream, voiceStream)
   ];
   
-  
   stream = new MediaStream(tracks);
-
-  stream.getVideoTracks()[0].onended = () => {
-    StopRecordButton.click();
-  };
 
   recorder = new MediaRecorder(stream, {mimeType: mimeType});
 
@@ -84,28 +98,11 @@ startRecordButton.addEventListener("click", async () => {
     // fix blob, support fix webm file larger than 2GB
     const fixBlob = await getSeekableBlob(new Blob([...buffer], { type: mimeType }));
     
-     const a = document.createElement('a');
-      a.href = URL.createObjectURL(fixBlob);
-      a.download = "screen-recording.webm";
-      a.click();
-      showImageProcessing(false);
- 
- 
-    // to write locally, it is recommended to use fs.createWriteStream to reduce memory usage
-    // const fileWriteStream = fs.createWriteStream(inputPath);
-    // const blobReadstream = fixBlob.stream();
-    // const blobReader = blobReadstream.getReader();
-
-    // while (true) {
-    //   let { done, value } = await blobReader.read();
-    //   if (done) {
-    //     console.log('write done.');
-    //     fileWriteStream.close();
-    //     break;
-    //   }
-    //   fileWriteStream.write(value);
-    //   value = null;
-    // }
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(fixBlob);
+    a.download = "screen-recording.webm";
+    a.click();
+    showImageProcessing(false);
     buffer = [];
 };
 
@@ -123,14 +120,13 @@ startRecordButton.addEventListener("click", async () => {
   });
 
   // Preview the screen locally.
-  video.srcObject = stream;
-  video.muted = true;
-  Screen1.style.display = 'none';
-  Screen2.style.display = 'block';
 
-  //log("Your screen is being shared.");
+  await attachToDOM("OnScreen", stream, "100%", "100%");
+  
+  document.getElementById("OnScreen").setAttribute("height", "100%");
+  document.getElementById("OnScreen").setAttribute("width", "100%");
+
 });
-
 
 async function getSeekableBlob(inputBlob) {
   // EBML.js copyrights goes to: https://github.com/legokichi/ts-ebml
@@ -167,10 +163,8 @@ async function getSeekableBlob(inputBlob) {
   
   return finalBlob;
 }
-       
 
-
-// JavaScript for handling option selection and getting the selected value
+// JavaScript for audioSelection handling option
 document.addEventListener('DOMContentLoaded', () => {
   const options = document.querySelectorAll('.option');
 
@@ -219,8 +213,12 @@ ResumeRecordButton.addEventListener('click', () => {
 
 StopRecordButton.addEventListener('click', () => {
     stream.getTracks().forEach(track => track.stop());
-    video.srcObject = null;
+    if(voiceStream){
+      voiceStream.getTracks().forEach(track => track.stop());
+    }
+    result.innerHTML = "";
     recorder.stop();
+    cancelVideoFrame(rafId);
     Screen1.style.display = 'block';
     Screen2.style.display = 'none';
 });
@@ -255,3 +253,77 @@ const mergeAudioStreams = (desktopStream, voiceStream) => {
     
   return (hasDesktop || hasVoice) ? destination.stream.getAudioTracks() : [];
 };
+
+/**
+ * Internal Polyfill to simulate
+ * window.requestAnimationFrame
+ * since the browser will kill canvas
+ * drawing when tab is inactive
+ */
+const requestVideoFrame = function (callback) {
+	return window.setTimeout(function () {
+		callback(Date.now());
+	}, 1000 / 60); // 60 fps - just like requestAnimationFrame
+};
+
+/**
+ * Internal polyfill to simulate
+ * window.cancelAnimationFrame
+ */
+const cancelVideoFrame = function (id) {
+	clearTimeout(id);
+};
+
+function makeComposite() {
+  if (cam && screen) {
+    // Check if videos are ready
+    if (cam.readyState === 4 && screen.readyState === 4) {
+      canvasCtx.save();
+      
+      // Ensure video dimensions are valid
+      if (screen.videoWidth > 0 && screen.videoHeight > 0) {
+        canvasElement.width = screen.videoWidth;
+        canvasElement.height = screen.videoHeight;
+        
+        canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+        canvasCtx.drawImage(screen, 0, 0, canvasElement.width, canvasElement.height);
+        
+        // Calculate dimensions for the camera feed
+        const camWidth = Math.floor(canvasElement.width / 4);
+        const camHeight = Math.floor(canvasElement.height / 4);
+        const camX = 0;
+        const camY = canvasElement.height - camHeight;
+        
+        canvasCtx.drawImage(cam, camX, camY, camWidth, camHeight);
+        
+        // Only get image data if canvas has valid dimensions
+        if (canvasElement.width > 0 && canvasElement.height > 0) {
+          let imageData = canvasCtx.getImageData(0, 0, canvasElement.width, canvasElement.height);
+          canvasCtx.putImageData(imageData, 0, 0);
+        }
+        
+        canvasCtx.restore();
+      }
+    }
+  }
+  
+  // Request next animation frame
+  rafId = requestVideoFrame(makeComposite);
+}
+
+async function attachToDOM(id, stream, width, height) {
+  return new Promise((resolve) => {
+    let videoElem = document.createElement("video");
+    videoElem.id = id;
+    videoElem.width = width;
+    videoElem.height = height;
+    videoElem.autoplay = true;
+    videoElem.setAttribute("playsinline", true);
+    videoElem.srcObject = new MediaStream(stream.getTracks());
+    videoElem.onloadedmetadata = () => {
+      videoElem.play();
+      resolve(videoElem);
+    };
+    result.appendChild(videoElem);
+  });
+}
